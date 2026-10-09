@@ -4,29 +4,24 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   
   try {
-    // 1. Menggunakan URL Proxy (Penyamar) agar Vercel tidak diblokir
     const urlAntam = 'https://harga-emas.org/antam/'; 
-    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(urlAntam);
+    // Menggunakan proxy alternatif yang lebih stabil untuk membaca teks mentah
+    const proxyUrl = 'https://api.codetabs.com/v1/proxy?quest=' + urlAntam;
     
-    // Vercel mengambil data lewat Proxy
+    // Membaca hasil proxy sebagai teks HTML biasa
     const response = await fetch(proxyUrl);
-    const dataProxy = await response.json();
+    const html = await response.text(); 
     
-    // Mengeluarkan isi HTML asli dari bungkus proxy
-    const html = dataProxy.contents; 
-
-    // 2. Cheerio membaca HTML aslinya
     const $ = cheerio.load(html);
     let harga1Gram = '';
     
-    // 3. Mencari baris tabel yang berisi 1 gram
+    // Pencarian tabel
     $('tr').each((index, element) => {
        const teksBaris = $(element).text().toLowerCase();
        
        if(teksBaris.includes('1 gram')) {
            const kolom = $(element).find('td');
            if(kolom.length > 1) {
-               // Mengambil teks harganya dan merapikan spasi
                harga1Gram = $(kolom[1]).text().trim().replace(/\s+/g, ' '); 
            }
        }
@@ -38,7 +33,7 @@ module.exports = async function handler(req, res) {
       data: {
         merk: "Antam",
         gramasi: "1 gr",
-        harga_terkini: harga1Gram || "Masih diblokir / Gagal diekstrak"
+        harga_terkini: harga1Gram || "Data tabel gagal dibaca (Web Target Berubah)"
       }
     });
 
